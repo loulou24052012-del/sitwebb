@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Montagnes du Monde</title>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #e3f2fd;
+  margin: 0;
+}
+
+h1 { padding: 20px; }
+
+#search {
+  width: 300px;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  margin: 15px;
+  padding: 15px;
+  border-radius: 15px;
+  width: 280px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card:hover { transform: scale(1.05); }
+
+img {
+  width: 100%;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.details {
+  display: none;
+  text-align: left;
+  margin-top: 10px;
+}
+
+/* 🔥 TROLL PLEIN ÉCRAN */
+#trollOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#trollOverlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏔️ Montagnes du Monde</h1>
+
+<input type="text" id="search" placeholder="Rechercher une montagne...">
+
+<div class="container" id="container"></div>
+
+<!-- 🔥 OVERLAY -->
+<div id="trollOverlay">
+  <img id="trollImg">
+</div>
+
+<script>
+
+// 🔥 UNE SEULE IMAGE TROLL
+const troll = "troll.png";
+
+// 🏔️ MONTAGNES
+const montagnes = [
+  { nom: "Mont Everest", hauteur: "8848 m", pays: "Népal / Chine", image: "everest.jpg", description: "Le plus haut sommet du monde." },
+  { nom: "K2", hauteur: "8611 m", pays: "Pakistan / Chine", image: "k2.jpg", description: "Deuxième plus haut sommet du monde." },
+  { nom: "Mont Blanc", hauteur: "4808 m", pays: "France / Italie", image: "montblanc.jpg", description: "Le plus haut sommet des Alpes." },
+  { nom: "Mont Fuji", hauteur: "3776 m", pays: "Japon", image: "fuji.jpg", description: "Symbole du Japon, volcan sacré." },
+  { nom: "Denali", hauteur: "6190 m", pays: "États-Unis", image: "denali.jpg", description: "Plus haut sommet d'Amérique du Nord." },
+  { nom: "Aconcagua", hauteur: "6961 m", pays: "Argentine", image: "aconcagua.jpg", description: "Plus haut sommet d'Amérique du Sud." }
+];
+
+// 🔹 AFFICHAGE
+function afficherMontagnes(data) {
+  const container = document.getElementById("container");
+  container.innerHTML = "";
+
+  data.forEach(m => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h2>${m.nom}</h2>
+      <img src="${m.image}">
+      <p>Hauteur : ${m.hauteur}</p>
+      <p>Pays : ${m.pays}</p>
+      <div class="details">${m.description}</div>
+    `;
+
+    // clic simple → détails
+    card.addEventListener("click", () => {
+      const details = card.querySelector(".details");
+      details.style.display = details.style.display === "block" ? "none" : "block";
+    });
+
+    // 🔥 double clic → troll plein écran
+    const img = card.querySelector("img");
+
+    img.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+
+      const overlay = document.getElementById("trollOverlay");
+      const trollImg = document.getElementById("trollImg");
+
+      trollImg.src = troll;
+      overlay.style.display = "flex";
+
+      // disparaît après 2 secondes
+      setTimeout(() => {
+        overlay.style.display = "none";
+      }, 2000);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// 🔍 recherche
+document.getElementById("search").addEventListener("input", (e) => {
+  const valeur = e.target.value.toLowerCase();
+  afficherMontagnes(
+    montagnes.filter(m => m.nom.toLowerCase().includes(valeur))
+  );
+});
+
+// lancement
+afficherMontagnes(montagnes);
+
+</script>
+
+</body>
+</html>

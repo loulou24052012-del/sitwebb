@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Montagnes du Monde</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #e3f2fd;
+}
+
+h1 { padding: 20px; }
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  margin: 15px;
+  padding: 15px;
+  border-radius: 15px;
+  width: 280px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+img {
+  width: 100%;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.details {
+  display: none;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.map {
+  height: 200px;
+  margin-top: 10px;
+  display: none;
+}
+
+#search {
+  width: 300px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+/* TROLL */
+#trollOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#trollOverlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏔️ Montagnes du Monde</h1>
+<input type="text" id="search" placeholder="Rechercher une montagne...">
+
+<div class="container" id="container"></div>
+
+<div id="trollOverlay">
+  <img id="trollImage">
+</div>
+
+<script>
+
+// 📊 DONNÉES (SOLUTION 2 → PAS DE "images/")
+const montagnes = [
+  { nom:"Mont Everest", image:"everest.jpg", hauteur:"8848 m", pays:"Népal / Chine", description:"Le plus haut sommet du monde.", lat:27.9881, lng:86.9250 },
+  { nom:"K2", image:"k2.jpg", hauteur:"8611 m", pays:"Pakistan / Chine", description:"Deuxième plus haut sommet du monde.", lat:35.8800, lng:76.5133 },
+  { nom:"Mont Blanc", image:"montblanc.jpg", hauteur:"4808 m", pays:"France / Italie", description:"Le plus haut sommet des Alpes.", lat:45.8326, lng:6.8652 },
+  { nom:"Mont Fuji", image:"fuji.jpg", hauteur:"3776 m", pays:"Japon", description:"Volcan sacré du Japon.", lat:35.3606, lng:138.7274 },
+  { nom:"Denali", image:"denali.jpg", hauteur:"6190 m", pays:"USA", description:"Plus haut sommet d'Amérique du Nord.", lat:63.0695, lng:-151.0067 },
+  { nom:"Aconcagua", image:"aconcagua.jpg", hauteur:"6961 m", pays:"Argentine", description:"Plus haut sommet d'Amérique du Sud.", lat:-32.6532, lng:-70.0109 }
+];
+
+// 😈 TROLL (pareil → même dossier)
+const trolls = [
+  "troll1.jpg",
+  "troll2.jpg",
+  "troll3.jpg",
+  "troll4.jpg",
+  "troll5.jpg",
+  "troll6.jpg"
+];
+
+function afficher(data) {
+  const container = document.getElementById("container");
+  container.innerHTML = "";
+
+  data.forEach(m => {
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h2>${m.nom}</h2>
+      <img src="${m.image}">
+      <p>Hauteur : ${m.hauteur}</p>
+      <p>Pays : ${m.pays}</p>
+      <div class="details">${m.description}</div>
+      <div class="map"></div>
+    `;
+
+    const img = card.querySelector("img");
+    const details = card.querySelector(".details");
+    const mapDiv = card.querySelector(".map");
+
+    // DETAILS
+    card.addEventListener("click", () => {
+      details.style.display = details.style.display === "block" ? "none" : "block";
+    });
+
+    // MAP
+    img.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      if(mapDiv.style.display === "block"){
+        mapDiv.style.display = "none";
+        mapDiv.innerHTML = "";
+      } else {
+        mapDiv.style.display = "block";
+
+        const map = L.map(mapDiv).setView([m.lat, m.lng], 10);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        L.marker([m.lat, m.lng]).addTo(map)
+          .bindPopup(m.nom)
+          .openPopup();
+      }
+    });
+
+    // TROLL
+    img.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+
+      const random = trolls[Math.floor(Math.random()*trolls.length)];
+      document.getElementById("trollImage").src = random;
+      document.getElementById("trollOverlay").style.display = "flex";
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// SEARCH
+document.getElementById("search").addEventListener("input", e => {
+  const v = e.target.value.toLowerCase();
+
+  afficher(montagnes.filter(m =>
+    m.nom.toLowerCase().includes(v) ||
+    m.pays.toLowerCase().includes(v)
+  ));
+});
+
+// fermer troll
+document.getElementById("trollOverlay").addEventListener("click", () => {
+  document.getElementById("trollOverlay").style.display = "none";
+});
+
+afficher(montagnes);
+
+</script>
+
+</body>
+</html>

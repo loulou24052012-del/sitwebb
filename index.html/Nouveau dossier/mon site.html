@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Montagnes du Monde</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #e3f2fd;
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  margin: 15px;
+  padding: 15px;
+  border-radius: 15px;
+  width: 280px;
+}
+
+img {
+  width: 100%;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.details {
+  display: none;
+  margin-top: 10px;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.map {
+  height: 200px;
+  margin-top: 10px;
+  display: none;
+}
+
+/* TROLL */
+#trollOverlay {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+#trollOverlay img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏔️ Montagnes du Monde</h1>
+<div id="container"></div>
+
+<div id="trollOverlay">
+  <img id="trollImage">
+</div>
+
+<script>
+
+// 📊 DONNÉES SIMPLES
+const montagnes = [
+  {
+    nom:"Mont Fuji",
+    image:"fuji.jpg",
+    hauteur:"3776 m",
+    pays:"Japon",
+    texte:"Le Mont Fuji est le symbole du Japon.",
+    lien:"https://fr.wikipedia.org/wiki/Mont_Fuji",
+    lat:35.3606,
+    lng:138.7274
+  }
+];
+
+// 😈 TROLL
+const trolls = ["troll1.jpg","troll2.jpg","troll3.jpg"];
+
+function afficher() {
+  const container = document.getElementById("container");
+
+  montagnes.forEach(m => {
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h2>${m.nom}</h2>
+      <img src="${m.image}">
+      <p>${m.hauteur}</p>
+      <p>${m.pays}</p>
+      <div class="details"></div>
+      <div class="map"></div>
+    `;
+
+    const img = card.querySelector("img");
+    const details = card.querySelector(".details");
+    const mapDiv = card.querySelector(".map");
+
+    // 📍 CARTE
+    img.addEventListener("click", () => {
+      mapDiv.style.display = "block";
+
+      const map = L.map(mapDiv).setView([m.lat, m.lng], 10);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.marker([m.lat, m.lng]).addTo(map);
+    });
+
+    // 📖 INFOS SIMPLES
+    mapDiv.addEventListener("click", () => {
+      details.style.display = "block";
+      details.innerHTML = `
+        <p>${m.texte}</p>
+        <a href="${m.lien}" target="_blank">🔗 Wikipédia</a>
+      `;
+    });
+
+    // 😈 TROLL
+    img.addEventListener("dblclick", () => {
+      const r = trolls[Math.floor(Math.random()*trolls.length)];
+      document.getElementById("trollImage").src = r;
+      document.getElementById("trollOverlay").style.display = "flex";
+    });
+
+    container.appendChild(card);
+  });
+}
+
+document.getElementById("trollOverlay").onclick = () => {
+  document.getElementById("trollOverlay").style.display = "none";
+};
+
+afficher();
+
+</script>
+
+</body>
+</html>
