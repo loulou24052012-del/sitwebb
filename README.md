@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Montagnes du Monde</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #e3f2fd;
+}
+
+h1 { padding: 20px; }
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  margin: 15px;
+  padding: 15px;
+  border-radius: 15px;
+  width: 280px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+img {
+  width: 100%;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.details {
+  display: none;
+  margin-top: 10px;
+  text-align: left;
+  background: #f1f1f1;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.details img {
+  margin-top: 10px;
+}
+
+.map {
+  height: 200px;
+  margin-top: 10px;
+  display: none;
+}
+
+#search {
+  width: 300px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+/* TROLL */
+#trollOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#trollOverlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏔️ Montagnes du Monde</h1>
+<input type="text" id="search" placeholder="Rechercher une montagne...">
+
+<div class="container" id="container"></div>
+
+<div id="trollOverlay">
+  <img id="trollImage">
+</div>
+
+<script>
+// 📊 DONNÉES
+const montagnes = [
+  { nom:"Mont Everest", image:"everest.jpg", hauteur:"8848 m", pays:"Népal / Chine", wiki:"Mont_Everest", lat:27.9881, lng:86.9250 },
+  { nom:"K2", image:"k2.jpg", hauteur:"8611 m", pays:"Pakistan / Chine", wiki:"K2", lat:35.8800, lng:76.5133 },
+  { nom:"Mont Blanc", image:"montblanc.jpg", hauteur:"4808 m", pays:"France / Italie", wiki:"Mont_Blanc", lat:45.8326, lng:6.8652 },
+  { nom:"Mont Fuji", image:"fuji.jpg", hauteur:"3776 m", pays:"Japon", wiki:"Mount_Fuji", lat:35.3606, lng:138.7274, texte:"Le Mont Fuji est le symbole du Japon." },
+  { nom:"Aconcagua", image:"aconcagua.jpg", hauteur:"6961 m", pays:"Argentine", wiki:"Aconcagua", lat:-32.6532, lng:-70.0109 },
+  { nom:"Matterhorn", image:"matterhorn.jpg", hauteur:"4478 m", pays:"Suisse / Italie", wiki:"Matterhorn", lat:45.9763, lng:7.6586 },
+  { nom:"Mount Kilimanjaro", image:"kilimanjaro.jpg", hauteur:"5895 m", pays:"Tanzanie", wiki:"Mount_Kilimanjaro", lat:-3.0674, lng:37.3556 },
+  { nom:"Mont Elbrouz", image:"elbrouz.jpg", hauteur:"5642 m", pays:"Russie", wiki:"Elbrus", lat:43.3550, lng:42.4370 },
+  { nom:"Mont Chimborazo", image:"chimborazo.jpg", hauteur:"6268 m", pays:"Équateur", wiki:"Chimborazo", lat:-1.4692, lng:-78.8170 },
+  { nom:"Mont Rainier", image:"rainier.jpg", hauteur:"4392 m", pays:"USA", wiki:"Mount_Rainier", lat:46.8523, lng:-121.7603 },
+  { nom:"Mont Kosciuszko", image:"kosciuszko.jpg", hauteur:"2228 m", pays:"Australie", wiki:"Mount_Kosciuszko", lat:-36.4550, lng:148.2631 },
+  { nom:"Mont Roraima", image:"roraima.jpg", hauteur:"2810 m", pays:"Venezuela / Brésil / Guyana", wiki:"Mount_Roraima", lat:5.1411, lng:-60.7616 },
+  { nom:"Denali", image:"denali.jpg", hauteur:"6190 m", pays:"USA", wiki:"Denali", lat:63.0695, lng:-151.0074, texte:"Le Denali est le plus haut sommet d'Amérique du Nord." }
+];
+
+// 😈 TROLL
+const trolls = [
+  "troll1.jpg",
+  "troll2.jpg",
+  "troll3.jpg",
+  "troll4.jpg",
+  "troll5.jpg",
+  "troll6.jpg"
+];
+
+// 📖 WIKIPEDIA COMPLET
+async function chargerWiki(nomWiki, element) {
+  try {
+    const res = await fetch(`https://fr.wikipedia.org/api/rest_v1/page/summary/${nomWiki}`);
+    const data = await res.json();
+
+    element.innerHTML = `
+      <h3>${data.title}</h3>
+      ${data.thumbnail ? `<img src="${data.thumbnail.source}" style="width:100%;border-radius:10px;">` : ""}
+      <p>${data.extract}</p>
+      <a href="https://fr.wikipedia.org/wiki/${nomWiki}" target="_blank">🔗 Voir l'article</a>
+    `;
+    
+  } catch {
+    element.innerHTML = "Erreur Wikipédia";
+  }
+}
+
+// 🎯 AFFICHAGE
+function afficher(data) {
+  const container = document.getElementById("container");
+  container.innerHTML = "";
+
+  data.forEach(m => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h2>${m.nom}</h2>
+      <img src="${m.image}">
+      <p>Hauteur : ${m.hauteur}</p>
+      <p>Pays : ${m.pays}</p>
+      <div class="details"></div>
+      <div class="map"></div>
+    `;
+
+    const img = card.querySelector("img");
+    const details = card.querySelector(".details");
+    const mapDiv = card.querySelector(".map");
+
+    img.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if(mapDiv.style.display === "block"){
+        mapDiv.style.display = "none";
+        mapDiv.innerHTML = "";
+      } else {
+        mapDiv.style.display = "block";
+        const map = L.map(mapDiv).setView([m.lat, m.lng], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.marker([m.lat, m.lng]).addTo(map).bindPopup(m.nom).openPopup();
+      }
+    });
+
+    mapDiv.addEventListener("click", (e) => {
+      e.stopPropagation();
+      details.style.display = "block";
+      if(m.texte) {
+        details.innerHTML = `<p>${m.texte}</p><a href="https://fr.wikipedia.org/wiki/${m.wiki}" target="_blank">🔗 Voir l'article</a>`;
+      } else {
+        chargerWiki(m.wiki, details);
+      }
+    });
+
+    img.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      const random = trolls[Math.floor(Math.random()*trolls.length)];
+      document.getElementById("trollImage").src = random;
+      document.getElementById("trollOverlay").style.display = "flex";
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// 🔍 RECHERCHE
+document.getElementById("search").addEventListener("input", e => {
+  const v = e.target.value.toLowerCase();
+  afficher(montagnes.filter(m =>
+    m.nom.toLowerCase().includes(v) || m.pays.toLowerCase().includes(v)
+  ));
+});
+
+document.getElementById("trollOverlay").addEventListener("click", () => {
+  document.getElementById("trollOverlay").style.display = "none";
+});
+
+// START
+afficher(montagnes);
+</script>
+
+</body>
+</html>
